@@ -20,12 +20,9 @@ env_config = {
 }[environment]()
 network_stack = NetworkStack(app, f"{ env_config.env_name.capitalize() }{ env_config.project_name.capitalize() }NetworkStack", env_config=env_config)
 cluster_stack = SharedClusterStack(app, f"{ env_config.env_name.capitalize() }{ env_config.project_name.capitalize() }ClusterStack", env_config=env_config, vpc=network_stack.vpc)
-eureka_stack = EurekaStack(app, f"{ env_config.env_name.capitalize() }{ env_config.project_name.capitalize() }EurekaStack", env_config=env_config, cluster=cluster_stack.cluster)
-gateway_stack = GatewayStack(app, f"{ env_config.env_name.capitalize() }{ env_config.project_name.capitalize() }GatewayStack", env_config=env_config, cluster=cluster_stack.cluster)
-eureka_stack.eureka_security_group.add_ingress_rule(peer=gateway_stack.gateway_security_group, connection=ec2.Port.tcp(8761), description="Allow Gateway to communicate with Eureka on port 8761")
-
-cluster_stack.add_dependency(network_stack)
-eureka_stack.add_dependency(cluster_stack)
-gateway_stack.add_dependency(cluster_stack)
+eureka_security_groups = [network_stack.eureka_security_group]
+gateway_security_groups = [network_stack.gateway_security_group, network_stack.microservices_security_group]
+eureka_stack = EurekaStack(app, f"{ env_config.env_name.capitalize() }{ env_config.project_name.capitalize() }EurekaStack", env_config=env_config, cluster=cluster_stack.cluster, security_groups=eureka_security_groups)
+gateway_stack = GatewayStack(app, f"{ env_config.env_name.capitalize() }{ env_config.project_name.capitalize() }GatewayStack", env_config=env_config, cluster=cluster_stack.cluster, security_groups=gateway_security_groups)
 
 app.synth()

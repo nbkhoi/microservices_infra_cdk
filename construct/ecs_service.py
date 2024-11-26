@@ -13,7 +13,7 @@ class CustomEcsServiceConstruct(Construct):
             image: str,
             cpu: str,
             memory: str,
-            security_group: ec2.SecurityGroup = None,
+            security_groups: list[ec2.SecurityGroup] = [],
             subnet_selection: ec2.SubnetSelection = None,
             desired_count: int = None,
             container_env: dict = None,
@@ -62,7 +62,7 @@ class CustomEcsServiceConstruct(Construct):
             service_name=service_name or self.node.default_child.logical_id,
             cluster=cluster,
             task_definition=task_definition,
-            security_groups=[security_group],
+            security_groups=security_groups,
             desired_count=desired_count,
             vpc_subnets=subnet_selection
         )

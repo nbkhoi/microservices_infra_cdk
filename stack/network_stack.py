@@ -25,6 +25,68 @@ class NetworkStack(Stack):
             max_azs=env_config.vpc_max_azs,
             nat_gateways=env_config.vpc_nat_gateways
         )
+        
+        # Security Group for Eureka
+        self.eureka_security_group = ec2.SecurityGroup(
+            self, "EurekaSecurityGroup",
+            vpc=self.vpc,
+            security_group_name=f"{env_config.env_name}-{env_config.project_name}-eureka-sg",
+            description="Allow traffic to Eureka on port 8761",
+            allow_all_outbound=True
+        )
+        
+        # Security Group for API Gateway
+        self.gateway_security_group = ec2.SecurityGroup(
+            self, "GatewaySecurityGroup",
+            vpc=self.vpc,
+            security_group_name=f"{env_config.env_name}-{env_config.project_name}-gateway-sg",
+            description="Allow traffic to Gateway on port 8080",
+            allow_all_outbound=True
+        )
+        
+        # Security Group for Application Load Balancer
+        self.alb_security_group = ec2.SecurityGroup(
+            self, "AlbSecurityGroup",
+            vpc=self.vpc,
+            security_group_name=f"{env_config.env_name}-{env_config.project_name}-alb-sg",
+            description="Allow traffic to ALB on port 80",
+            allow_all_outbound=True
+        )
+        
+        # Security Group for Microservices
+        self.microservices_security_group = ec2.SecurityGroup(
+            self, "MicroservicesSecurityGroup",
+            vpc=self.vpc,
+            security_group_name=f"{env_config.env_name}-{env_config.project_name}-microservices-sg",
+            description="Allow traffic to Microservices on port 8080",
+            allow_all_outbound=True
+        )
+        
+        # Add Ingress rules to Security Groups
+        # Allow Eureka to communicate with itself
+        self.eureka_security_group.add_ingress_rule(
+            peer=self.eureka_security_group,
+            connection=ec2.Port.tcp(8761),
+            description="Allow Eureka to communicate with itself on port 8761"
+        )
+        # Allow Gateway to communicate with itself
+        self.gateway_security_group.add_ingress_rule(
+            peer=self.gateway_security_group,
+            connection=ec2.Port.tcp(8080),
+            description="Allow Gateway to communicate with itself on port 8080"
+        )
+        # Allow Internet to communicate with ALB on port 80
+        self.alb_security_group.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(80),
+            description="Allow Internet to communicate with ALB on port 80"
+        )
+        # Allow Microservices to communicate with itself
+        self.microservices_security_group.add_ingress_rule(
+            peer=self.microservices_security_group,
+            connection=ec2.Port.tcp(8080),
+            description="Allow Microservices to communicate with itself on port 8080"
+        )
 
         # Add a tag to specify the VPC name
         Tags.of(self.vpc).add("env", env_config.env_name)
